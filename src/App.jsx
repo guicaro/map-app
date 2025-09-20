@@ -5,8 +5,8 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>South Florida Map</h1>
-        <p>Markers: Miami and West Palm Beach</p>
+        <h1>Strike Net</h1>
+        <p>Always on the lookout for invasive species!</p>
       </header>
       <main className="app-main">
         <Map />
