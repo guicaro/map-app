@@ -42,6 +42,7 @@ body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubunt
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
+  position: relative; /* allow absolute overlays like report button */
 }
 
 .map-container {

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import ReportButton from './ReportButton'
 
 // Temporary mock data while backend API is unavailable
 const MOCK_REPORTS = [
@@ -103,6 +104,7 @@ export default function Map() {
     <div className="map-wrapper">
       {error && <div className="map-error">{error}</div>}
       <div ref={containerRef} className="map-container" />
+      <ReportButton />
       {selected && (
         <div
           role="dialog"
