@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-
-const MIAMI = { name: 'Miami, FL', lng: -80.1918, lat: 25.7617 }
-const WPB = { name: 'West Palm Beach, FL', lng: -80.0534, lat: 26.7153 }
+import supabase from '../utils/supabase'
 
 export default function Map() {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
+  const markersRef = useRef([])
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -18,7 +17,7 @@ export default function Map() {
     }
 
     mapboxgl.accessToken = token
-    const initialCenter = [(-80.1918 + -80.0534) / 2, (25.7617 + 26.7153) / 2]
+    const initialCenter = [-80.1918, 25.7617] // default South Florida center
 
     mapRef.current = new mapboxgl.Map({
       container: containerRef.current,
@@ -29,23 +28,70 @@ export default function Map() {
 
     const map = mapRef.current
 
-    const miamiMarker = new mapboxgl.Marker({ color: '#e11d48' })
-      .setLngLat([MIAMI.lng, MIAMI.lat])
-      .setPopup(new mapboxgl.Popup().setText(MIAMI.name))
-      .addTo(map)
+    const addReportMarkers = async () => {
+      // Fetch all reports: latitude, longitude, file_name
+      const { data, error } = await supabase
+        .from('reports')
+        .select('latitude, longitude, file_name')
 
-    const wpbMarker = new mapboxgl.Marker({ color: '#2563eb' })
-      .setLngLat([WPB.lng, WPB.lat])
-      .setPopup(new mapboxgl.Popup().setText(WPB.name))
-      .addTo(map)
+      if (error) {
+        setError(error.message || 'Failed to load reports from Supabase')
+        return
+      }
 
-    // Fit bounds after map load so canvas has size (prevents Firefox warning)
-    const bounds = new mapboxgl.LngLatBounds()
-    bounds.extend([MIAMI.lng, MIAMI.lat])
-    bounds.extend([WPB.lng, WPB.lat])
+      const reports = Array.isArray(data) ? data : []
+      const bounds = new mapboxgl.LngLatBounds()
+
+      reports.forEach((row) => {
+        const lat = typeof row.latitude === 'string' ? parseFloat(row.latitude) : row.latitude
+        const lng = typeof row.longitude === 'string' ? parseFloat(row.longitude) : row.longitude
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          // Resolve public URL for the image from storage bucket
+          const fileName = row.file_name
+          let imageUrl = ''
+          if (fileName) {
+            const { data: urlData } = supabase.storage
+              .from('animalPhotos')
+              .getPublicUrl(fileName)
+            imageUrl = urlData?.publicUrl || ''
+          }
+
+          const img = document.createElement('img')
+          img.src = imageUrl
+          img.alt = fileName || 'animal photo'
+          img.style.maxWidth = '200px'
+          img.style.maxHeight = '150px'
+          img.style.display = 'block'
+
+          const caption = document.createElement('div')
+          caption.textContent = fileName || ''
+          caption.style.marginTop = '6px'
+          caption.style.fontSize = '12px'
+
+          const content = document.createElement('div')
+          content.style.maxWidth = '220px'
+          if (imageUrl) content.appendChild(img)
+          if (fileName) content.appendChild(caption)
+
+          const marker = new mapboxgl.Marker()
+            .setLngLat([lng, lat])
+            .setPopup(new mapboxgl.Popup({ offset: 12 }).setDOMContent(content))
+            .addTo(map)
+
+          markersRef.current.push(marker)
+          bounds.extend([lng, lat])
+        }
+      })
+
+      // If any markers were added, fit to them
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { padding: 60, duration: 800 })
+      }
+    }
+
     map.on('load', () => {
       map.resize()
-      map.fitBounds(bounds, { padding: 60, duration: 800 })
+      addReportMarkers()
     })
 
     // Resize map when the window changes to stay responsive
@@ -54,8 +100,7 @@ export default function Map() {
 
     return () => {
       window.removeEventListener('resize', onResize)
-      miamiMarker.remove()
-      wpbMarker.remove()
+      markersRef.current.forEach((m) => m.remove())
       map.remove()
     }
   }, [])
