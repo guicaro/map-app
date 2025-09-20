@@ -1,0 +1,71 @@
+:root {
+  --bg: #0b1020;
+  --panel: #12172a;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background: var(--bg); color: var(--text); }
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  padding: 12px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.app-header h1 { margin: 0 0 4px 0; font-size: 18px; }
+.app-header p { margin: 0; color: var(--muted); font-size: 14px; }
+
+.app-main {
+  flex: 1 1 auto;
+  min-height: 0; /* allow child to size within flex */
+  display: flex; /* ensure children can flex to fill space */
+}
+
+.app-footer {
+  padding: 8px 16px;
+  background: var(--panel);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.map-wrapper {
+  /* Fill remaining space using flex instead of percentage heights */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.map-container {
+  /* Flex to fill wrapper; avoid 100% height which can resolve to 0 */
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.map-error {
+  position: absolute;
+  z-index: 10;
+  margin: 12px;
+  padding: 10px 12px;
+  background: #7f1d1d;
+  color: #fecaca;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+}
+
+/* Make header/footer stack nicely on small screens */
+@media (max-width: 640px) {
+  .app-header h1 { font-size: 16px; }
+  .app-header p { font-size: 13px; }
+}
